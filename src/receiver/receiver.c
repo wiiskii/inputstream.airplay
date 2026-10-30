@@ -3239,8 +3239,14 @@ int main(int argc, char** argv)
   raop_set_tcp_ports(g_raop, tcp);
   raop_set_udp_ports(g_raop, udp);
 
-  unsigned short raop_port = raop_get_port(g_raop);
-  raop_start_httpd(g_raop, &raop_port);
+  const char* port_env = getenv("AIRPLAY_PORT");
+  unsigned short raop_port =
+      (port_env && atoi(port_env) > 0) ? (unsigned short)atoi(port_env) : 7000;
+  if (raop_start_httpd(g_raop, &raop_port) != 0)
+  {
+    raop_port = 0;
+    raop_start_httpd(g_raop, &raop_port);
+  }
   raop_set_port(g_raop, raop_port);
   raop_set_dnssd(g_raop, g_dnssd);
 

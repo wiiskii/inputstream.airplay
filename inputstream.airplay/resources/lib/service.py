@@ -424,6 +424,7 @@ def receiver_env():
     env['AIRPLAY_PAIRING'] = '1' if setting_bool('pairing', False) else '0'
     env['AIRPLAY_REGISTRY'] = os.path.join(PROFILE, 'paired-devices')
     env['AIRPLAY_ART_DIR'] = PROFILE
+    env['AIRPLAY_PORT'] = '7000'
     width, height, refresh = display_mode()
     env['AIRPLAY_WIDTH'] = width
     env['AIRPLAY_HEIGHT'] = height
