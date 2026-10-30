@@ -125,14 +125,21 @@ jobs:
         set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
         set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
         set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
-        set(PKG_CONFIG_EXECUTABLE /usr/bin/pkg-config)
+        set(PKG_CONFIG_EXECUTABLE /usr/bin/pkg-config CACHE FILEPATH "pkg-config executable" FORCE)
         set(ENV{PKG_CONFIG_PATH} "/usr/lib/arm-linux-gnueabihf/pkgconfig")
-        set(ENV{PKG_CONFIG_LIBDIR} "/usr/lib/arm-linux-gnueabihf/pkgconfig")
-        set(OPENSSL_ROOT_DIR /usr)
-        set(OPENSSL_INCLUDE_DIR /usr/include)
-        set(OPENSSL_CRYPTO_LIBRARY /usr/lib/arm-linux-gnueabihf/libcrypto.so CACHE FILEPATH "")
-        set(OPENSSL_SSL_LIBRARY /usr/lib/arm-linux-gnueabihf/libssl.so CACHE FILEPATH "")
-        set(LIBPLIST /usr/lib/arm-linux-gnueabihf/libplist-2.0.so CACHE FILEPATH "")
+        set(ENV{PKG_CONFIG_LIBDIR} "/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig")
+        set(OPENSSL_ROOT_DIR /usr CACHE PATH "" FORCE)
+        set(OPENSSL_INCLUDE_DIR /usr/include CACHE PATH "" FORCE)
+        set(OPENSSL_CRYPTO_LIBRARY /usr/lib/arm-linux-gnueabihf/libcrypto.so CACHE FILEPATH "" FORCE)
+        set(OPENSSL_SSL_LIBRARY /usr/lib/arm-linux-gnueabihf/libssl.so CACHE FILEPATH "" FORCE)
+        set(PLIST_FOUND TRUE CACHE BOOL "" FORCE)
+        set(PLIST_VERSION "2.4.0" CACHE STRING "" FORCE)
+        set(PLIST_21_FOUND TRUE CACHE BOOL "" FORCE)
+        set(PLIST_23_FOUND TRUE CACHE BOOL "" FORCE)
+        set(PLIST_LIBRARIES "plist-2.0" CACHE STRING "" FORCE)
+        set(PLIST_INCLUDE_DIRS "/usr/include" CACHE PATH "" FORCE)
+        set(PLIST_LIBRARY_DIRS "/usr/lib/arm-linux-gnueabihf" CACHE PATH "" FORCE)
+        set(LIBPLIST /usr/lib/arm-linux-gnueabihf/libplist-2.0.so CACHE FILEPATH "" FORCE)
         EOF
     - name: Prepare
       run: |
@@ -146,8 +153,11 @@ jobs:
         EXTRA_ARGS=()
         if [ "${{ matrix.arch }}" = "armhf" ]; then
           export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"
-          export PKG_CONFIG_LIBDIR="/usr/lib/arm-linux-gnueabihf/pkgconfig"
-          EXTRA_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/toolchain-armhf.cmake")
+          export PKG_CONFIG_LIBDIR="/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig"
+          EXTRA_ARGS+=(
+            "-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/toolchain-armhf.cmake"
+            "-DPKG_CONFIG_EXECUTABLE=/usr/bin/pkg-config"
+          )
         fi
         cmake \
           -B ${app_id}/build \
@@ -169,7 +179,7 @@ jobs:
       run: |
         if [ "${{ matrix.arch }}" = "armhf" ]; then
           export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"
-          export PKG_CONFIG_LIBDIR="/usr/lib/arm-linux-gnueabihf/pkgconfig"
+          export PKG_CONFIG_LIBDIR="/usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig"
         fi
         cmake --build ${app_id}/build 2>&1 | tee ${{ github.workspace }}/build.log
     - name: Check the build used the unpacked UxPlay
