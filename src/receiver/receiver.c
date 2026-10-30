@@ -3242,7 +3242,7 @@ int main(int argc, char** argv)
   const char* port_env = getenv("AIRPLAY_PORT");
   unsigned short raop_port =
       (port_env && atoi(port_env) > 0) ? (unsigned short)atoi(port_env) : 7000;
-  if (raop_start_httpd(g_raop, &raop_port) != 0)
+  if (raop_start_httpd(g_raop, &raop_port) < 0)
   {
     raop_port = 0;
     raop_start_httpd(g_raop, &raop_port);
