@@ -53,7 +53,7 @@ jobs:
             uxplay_source: true
             werror: true
           - name: "Linux GCC build (armhf, Omega)"
-            os: ubuntu-latest
+            os: ubuntu-24.04-arm
             kodi_ref: Omega
             arch: armhf
             CC: arm-linux-gnueabihf-gcc
@@ -82,8 +82,13 @@ jobs:
       if: matrix.arch == 'armhf'
       run: |
         sudo dpkg --add-architecture armhf
+        if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+          if grep -q "Architectures:.*arm64" /etc/apt/sources.list.d/ubuntu.sources; then
+            sudo sed -i 's/Architectures: arm64/Architectures: arm64 armhf/g' /etc/apt/sources.list.d/ubuntu.sources
+          fi
+        fi
         sudo apt-get update
-        sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libssl-dev:armhf libplist-dev:armhf pkg-config qemu-user-static
+        sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libssl-dev:armhf libplist-dev:armhf pkg-config
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
       run: brew install openssl@3 libplist
@@ -137,11 +142,11 @@ jobs:
       env:
         CC: ${{ matrix.CC }}
         CXX: ${{ matrix.CXX }}
-        PKG_CONFIG_PATH: ${{ matrix.arch == 'armhf' && '/usr/lib/arm-linux-gnueabihf/pkgconfig' || '' }}
-        PKG_CONFIG_LIBDIR: ${{ matrix.arch == 'armhf' && '/usr/lib/arm-linux-gnueabihf/pkgconfig' || '' }}
       run: |
         EXTRA_ARGS=()
         if [ "${{ matrix.arch }}" = "armhf" ]; then
+          export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"
+          export PKG_CONFIG_LIBDIR="/usr/lib/arm-linux-gnueabihf/pkgconfig"
           EXTRA_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/toolchain-armhf.cmake")
         fi
         cmake \
@@ -161,9 +166,12 @@ jobs:
       env:
         UXPLAY_SOURCE_DIR: ${{ matrix.uxplay_source && format('{0}/uxplay', github.workspace) || '' }}
         AIRPLAY_STRICT_WARNINGS: ${{ matrix.werror && 'ON' || '' }}
-        PKG_CONFIG_PATH: ${{ matrix.arch == 'armhf' && '/usr/lib/arm-linux-gnueabihf/pkgconfig' || '' }}
-        PKG_CONFIG_LIBDIR: ${{ matrix.arch == 'armhf' && '/usr/lib/arm-linux-gnueabihf/pkgconfig' || '' }}
-      run: cmake --build ${app_id}/build 2>&1 | tee ${{ github.workspace }}/build.log
+      run: |
+        if [ "${{ matrix.arch }}" = "armhf" ]; then
+          export PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"
+          export PKG_CONFIG_LIBDIR="/usr/lib/arm-linux-gnueabihf/pkgconfig"
+        fi
+        cmake --build ${app_id}/build 2>&1 | tee ${{ github.workspace }}/build.log
     - name: Check the build used the unpacked UxPlay
       if: matrix.uxplay_source
       run: |
